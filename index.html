@@ -38,7 +38,7 @@ async function advance(n){
 
 async function submitAndPay(){
  const email=val('email'),name=val('name'),phone=val('phone'),core=val('core');
- if(!core||!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $('error').textContent='Vul je naam, geldig e-mailadres en kernvraag in.';return }
+ if(!core||!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $('error').textContent='Controle: kernvraag='+core.length+' tekens, naam='+name.length+' tekens, e-mail='+email+' (geldig: '+/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)+')';return }
  if($('whatsapp').checked&&!phone){$('error').textContent='Vul je WhatsApp-nummer in of haal het vinkje weg.';return}
  if(WORKER_URL.includes('PASTE_YOUR')){$('error').textContent='De beveiligde betaalverbinding is nog niet ingesteld. Publiceer de app nog niet voor klanten.';return}
  const button=$('payButton');button.disabled=true;button.textContent='Veilige betaling voorbereiden…';$('error').textContent='';
