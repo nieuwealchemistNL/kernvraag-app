@@ -1,0 +1,49 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ontdek jouw echte vraag | Nieuwe Alchemist</title><style>:root{font-family:Arial,sans-serif;color:#231c1e;background:#faf8f7}*{box-sizing:border-box}main{max-width:690px;margin:35px auto;background:white;padding:clamp(22px,5vw,46px);border:1px solid #e8e0e0;border-radius:15px}h1{font-size:clamp(30px,5vw,43px);margin:0 0 12px}h2{font-size:24px}p{line-height:1.55;color:#554d50}.tag{color:#842c46;font-weight:bold;font-size:13px;letter-spacing:.06em}label{display:block;font-weight:bold;margin:18px 0 7px}textarea,input{width:100%;border:1px solid #cdbfc3;border-radius:7px;padding:13px;font:inherit}textarea{min-height:110px}button,.pay{background:#842c46;color:white;border:0;border-radius:7px;padding:15px 19px;font-weight:bold;font-size:16px;cursor:pointer;text-decoration:none;display:inline-block;margin-top:18px}.secondary{background:#eee8ea;color:#40222c;margin-right:10px}.hidden{display:none}.recap{border-left:3px solid #842c46;background:#faf5f6;padding:12px 15px;margin:13px 0;white-space:pre-wrap;overflow-wrap:anywhere}.recap small{display:block;color:#842c46;font-weight:bold;margin-bottom:5px}.hint{font-size:13px;color:#63565a}.error{color:#a12035}.choice{display:block;border:1px solid #d8cbd0;border-radius:7px;padding:12px;margin:9px 0;cursor:pointer}.choice input{width:auto;margin-right:8px}.muted{color:#777}</style></head><body><main><div class="tag">NIEUWE ALCHEMIST</div><h1>Wat wil je écht weten?</h1><p>Een goede tarotreading begint met de juiste vraag. Ontdek wat er onder jouw eerste vraag ligt.</p><div id="progress" class="tag">STAP 1 VAN 4</div><section id="s1"><h2>Waar wil je mee beginnen?</h2><label class="choice"><input type="radio" name="entrymode" value="situatie" checked> Ik wil mijn situatie vertellen</label><label class="choice"><input type="radio" name="entrymode" value="vraag"> Ik heb al een vraag</label><label for="initial">Vertel in je eigen woorden wat er speelt</label><textarea id="initial" placeholder="Beschrijf je situatie, gevoel, dilemma of vraag. Je hoeft nog geen duidelijke vraag te hebben."></textarea><button onclick="advance(1)">Verdiep mijn vraag →</button></section><section id="s2" class="hidden"><h2>Wat raakt je hierin?</h2><div id="r2"></div><p id="prompt2"></p><p id="aierror2" class="hint" role="status"></p><label for="answer2">Jouw antwoord</label><textarea id="answer2" placeholder="Vertel wat dit bij je oproept..."></textarea><button class="secondary" onclick="show(1)">Terug</button><button onclick="advance(2)">Verder →</button></section><section id="s3" class="hidden"><h2>Wat wil je onderzoeken?</h2><div id="r3"></div><p id="prompt3"></p><p id="aierror3" class="hint" role="status"></p><label for="answer3">Jouw antwoord</label><textarea id="answer3" placeholder="Wat zou je graag beter begrijpen?"></textarea><button class="secondary" onclick="show(2)">Terug</button><button onclick="advance(3)">Ontdek mijn kernvraag →</button></section><section id="s4" class="hidden"><h2>Jouw kernvraag</h2><div id="r4"></div><p>Dit is een voorstel op basis van je antwoorden. Pas het gerust aan zodat het precies klopt.</p><label for="core">De vraag voor jouw reading</label><textarea id="core"></textarea><p id="aierror4" class="hint" role="status"></p><h2>Jouw gegevens</h2><label for="name">Naam</label><input id="name" autocomplete="name" placeholder="Voornaam"><label for="email">E-mailadres</label><input id="email" type="email" autocomplete="email" placeholder="naam@voorbeeld.nl"><label for="phone">WhatsApp-nummer (optioneel)</label><input id="phone" type="tel" autocomplete="tel" placeholder="+31 6 ..."><label class="choice"><input type="checkbox" id="whatsapp"> Ik ontvang mijn audioreading graag via WhatsApp op dit nummer (als ik een nummer invul).</label><p class="hint">Na betaling via Stripe wordt je aanvraag automatisch naar Nieuwe Alchemist verstuurd. Je hoeft geen e-mail zelf te versturen. Je gegevens worden alleen gebruikt om je bestelling af te handelen.</p><button class="secondary" onclick="show(3)">Terug</button><button id="payButton" onclick="submitAndPay()">Verder naar veilige betaling · €39,99 →</button><p id="error" class="error" role="alert"></p></section><footer><p class="hint">Tarot biedt reflectie en perspectief, geen gegarandeerde voorspellingen. © Nieuwe Alchemist</p></footer></main><script>
+const $=id=>document.getElementById(id), val=id=>$(id).value.trim();let category='algemeen';
+function classify(s){s=s.toLowerCase();if(/relatie|partner|liefde|vriend|ex\b|huwelijk/.test(s))return 'relatie';if(/werk|baan|carri|bedrijf|ondernem|geld|financi/.test(s))return 'werk';if(/keuze|kiezen|besliss|twijfel/.test(s))return 'keuze';if(/familie|moeder|vader|kind|ouders/.test(s))return 'familie';return 'algemeen'}
+function recap(id,items){$(id).innerHTML='';items.forEach(([label,value])=>{const d=document.createElement('div');d.className='recap';const sm=document.createElement('small');sm.textContent=label;const v=document.createElement('div');v.textContent=value;d.append(sm,v);$(id).append(d)})}
+function show(n){for(let i=1;i<=4;i++)$('s'+i).classList.toggle('hidden',i!==n);$('progress').textContent='STAP '+n+' VAN 4';scrollTo({top:0,behavior:'smooth'})}
+const WORKER_URL = 'https://readingkernvraag.tarotalchemist.workers.dev';
+let promptTwo='',promptThree='';
+function mode(){return document.querySelector('input[name="entrymode"]:checked').value}
+async function askAI(stage){
+ const payload={stage,mode:mode(),initial:val('initial'),answer2:val('answer2'),answer3:val('answer3'),prompt2:promptTwo,prompt3:promptThree};
+ const response=await fetch(WORKER_URL+'/deepen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ const data=await response.json();
+ if(!response.ok||!data.result)throw new Error(data.error||'AI tijdelijk niet beschikbaar');
+ return data.result;
+}
+async function advance(n){
+ if(n===1){
+  if(!val('initial'))return alert('Vertel eerst wat er speelt.');
+  recap('r2',[[mode()==='situatie'?'Jouw situatie':'Jouw eerste vraag',val('initial')]]);
+  $('prompt2').textContent='Even nadenken over je situatie…';$('aierror2').textContent='';show(2);
+  try{promptTwo=await askAI('first');$('prompt2').textContent=promptTwo}
+  catch(e){$('prompt2').textContent='Wat raakt je het meest in wat je beschrijft?';promptTwo=$('prompt2').textContent;$('aierror2').textContent='De persoonlijke AI-vraag kon niet worden geladen. Je kunt wel verder.'}
+ }else if(n===2){
+  if(!val('answer2'))return alert('Vul eerst je antwoord in.');
+  recap('r3',[[mode()==='situatie'?'Jouw situatie':'Jouw eerste vraag',val('initial')],['Jouw eerste antwoord',val('answer2')]]);
+  $('prompt3').textContent='Even nadenken over je antwoord…';$('aierror3').textContent='';show(3);
+  try{promptThree=await askAI('second');$('prompt3').textContent=promptThree}
+  catch(e){$('prompt3').textContent='Wat zou je over jezelf of deze situatie werkelijk willen begrijpen?';promptThree=$('prompt3').textContent;$('aierror3').textContent='De persoonlijke AI-vraag kon niet worden geladen. Je kunt wel verder.'}
+ }else if(n===3){
+  if(!val('answer3'))return alert('Vul eerst je antwoord in.');
+  recap('r4',[[mode()==='situatie'?'Jouw situatie':'Jouw eerste vraag',val('initial')],['Jouw eerste antwoord',val('answer2')],['Jouw tweede antwoord',val('answer3')]]);
+  $('core').value='Je persoonlijke kernvraag wordt geformuleerd…';$('aierror4').textContent='';show(4);
+  try{$('core').value=await askAI('final')}
+  catch(e){$('core').value='Wat mag ik begrijpen over mijn eigen behoeften en keuzes in deze situatie?';$('aierror4').textContent='De AI is tijdelijk niet beschikbaar. Pas deze voorbeeldvraag zelf aan.'}
+ }
+}
+// Vul hier na het instellen van de Cloudflare Worker de Worker-URL in.
+
+async function submitAndPay(){
+ const email=val('email'),name=val('name'),phone=val('phone'),core=val('core');
+ if(!core||!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $('error').textContent='Vul je naam, geldig e-mailadres en kernvraag in.';return }
+ if($('whatsapp').checked&&!phone){$('error').textContent='Vul je WhatsApp-nummer in of haal het vinkje weg.';return}
+ if(WORKER_URL.includes('PASTE_YOUR')){$('error').textContent='De beveiligde betaalverbinding is nog niet ingesteld. Publiceer de app nog niet voor klanten.';return}
+ const button=$('payButton');button.disabled=true;button.textContent='Veilige betaling voorbereiden…';$('error').textContent='';
+ const payload={name,email,phone,whatsapp:$('whatsapp').checked,initial:val('initial'),answer2:val('answer2'),answer3:val('answer3'),core,entry_mode:mode(),prompt2:promptTwo,prompt3:promptThree};
+ try{const r=await fetch(WORKER_URL.replace(/\/$/,'')+'/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok||!data.url)throw new Error(data.error||'Betaling kon niet worden gestart.');window.location.href=data.url}
+ catch(e){$('error').textContent=e.message||'Er ging iets mis. Probeer het opnieuw.';button.disabled=false;button.textContent='Verder naar veilige betaling · €39,99 →'}
+}
+</script></body></html>
